@@ -2,10 +2,11 @@
   "name": "neurodiversity-customizer",
   "version": "1.0.0",
   "description": "Chrome extension to customize web pages for neurodiverse users",
-  "main": "index.js",
-  "scripts": {
+  "main": "index.js",  "scripts": {
     "start": "webpack --watch --config webpack.config.js",
-    "build": "webpack --config webpack.config.js"
+    "build": "webpack --config webpack.config.js",
+    "build:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
+    "package": "npm run build:prod && powershell Compress-Archive -Path dist/* -DestinationPath neurodiversity-customizer.zip -Force"
   },
   "keywords": [
     "neurodiversity",
@@ -27,6 +28,7 @@
     "autoprefixer": "^10.4.14",
     "babel-loader": "^9.1.2",
     "copy-webpack-plugin": "^11.0.0",
+    "cross-env": "^7.0.3",
     "css-loader": "^6.8.1",
     "postcss": "^8.4.24",
     "postcss-loader": "^7.3.3",
