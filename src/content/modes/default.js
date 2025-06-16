@@ -19,6 +19,16 @@ export function resetToDefaultMode() {
     window.neuroCustomizerObservers = [];
   }
   
+  // Remove any custom elements we've added (buttons, tooltips, etc.)
+  if (window.neuroCustomizerElements) {
+    window.neuroCustomizerElements.forEach(element => {
+      if (element && element.parentNode) {
+        element.remove();
+      }
+    });
+    window.neuroCustomizerElements = [];
+  }
+  
   // Remove any inline styles we've added
   const elementsWithInlineStyles = document.querySelectorAll('[data-neuro-original-style]');
   elementsWithInlineStyles.forEach(element => {
@@ -27,11 +37,25 @@ export function resetToDefaultMode() {
     element.removeAttribute('data-neuro-original-style');
   });
   
-  // Remove reading ruler if present
-  const readingRuler = document.getElementById('neuro-reading-ruler');
-  if (readingRuler) {
-    readingRuler.remove();
-  }
+  // Remove specific UI elements by ID
+  const elementsToRemove = [
+    'neuro-reading-ruler',
+    'neuro-keyboard-hint',
+    'neuro-high-contrast-toggle',
+    'neuro-high-contrast-yellow-mode',
+    'neuro-focus-highlight'
+  ];
+  
+  elementsToRemove.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.remove();
+    }
+  });
+  
+  // Also remove any elements with data-neuro-customizer attribute
+  const customElements = document.querySelectorAll('[data-neuro-customizer]');
+  customElements.forEach(element => element.remove());
   
   console.log('Reset to default mode complete');
 }

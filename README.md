@@ -16,15 +16,15 @@ A Chrome extension that empowers neurodiverse users to tailor the visual present
 
 2. **Dyslexia-Friendly Mode**: Enhances readability for users with dyslexia and related visual processing differences.
    - Applies a dyslexia-optimized font (OpenDyslexic, Lexend).
-   - Increases letter, word, and line spacing.
-   - Disables italics; enforces regular, upright text.
+   - Increases letter, word, and line spacing.   - Disables italics; enforces regular, upright text.
    - Simplifies backgrounds behind text.
 
 3. **Focus Mode (ADHD/Attention Support)**: Minimizes distractions and helps users maintain attention on main content.
-   - Subtly dims or blurs non-content areas without hiding them.
-   - Emphasizes main content block.
-   - Increases line and paragraph spacing for easier tracking.
-   - Suppresses animations and adds a "reading ruler" to help keep place in text.
+   - Subtly highlights the paragraph you're currently reading.
+   - Adds a gentle left border to paragraphs for improved text tracking.
+   - Optimizes line length and spacing for easier reading.
+   - Provides a reading ruler that follows your cursor (can also be controlled with arrow keys).
+   - Reduces visual prominence of non-essential page elements without hiding them.
 
 4. **High Contrast Mode**: Supports users with visual processing challenges or sensory fatigue.
    - Maximizes contrast between foreground text and background.
