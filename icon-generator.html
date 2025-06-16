@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="iconCanvas" width="128" height="128"></canvas>
+  <script>
+    // This script generates a simple icon and converts it to a PNG data URL
+    const canvas = document.getElementById('iconCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Create gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 128, 128);
+    gradient.addColorStop(0, '#6366f1');
+    gradient.addColorStop(1, '#4f46e5');
+    
+    // Draw rounded rectangle
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.roundRect(8, 8, 112, 112, 16);
+    ctx.fill();
+    
+    // Draw concentric circles
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.beginPath();
+    ctx.arc(64, 64, 48, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(64, 64, 40, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(64, 64, 32, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(64, 64, 24, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw white inner circle
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(64, 64, 16, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw hexagon outline
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(40, 64);
+    ctx.lineTo(50, 40);
+    ctx.lineTo(78, 40);
+    ctx.lineTo(88, 64);
+    ctx.lineTo(78, 88);
+    ctx.lineTo(50, 88);
+    ctx.closePath();
+    ctx.stroke();
+    
+    // Convert to data URL
+    const dataURL = canvas.toDataURL('image/png');
+    console.log(dataURL);
+  </script>
+</body>
+</html>
