@@ -1,0 +1,524 @@
+// High Contrast Mode implementation
+import { createStyleElement, createControlButton } from '../utils/common';
+
+export function applyHighContrastMode() {
+  // Add a class to the body
+  document.body.classList.add('neuro-high-contrast-mode');
+  
+  // Get website theme (dark or light) and site-specific settings
+  const websiteTheme = window.neuroCustomizerContext?.websiteTheme || 'light';
+  const siteSettings = window.neuroCustomizerContext?.siteSettings || {};
+  
+  // Determine initial color scheme based on website theme
+  const initialScheme = websiteTheme === 'dark' ? 'yellow' : 'white';
+  
+  // Generate the list of selectors to exclude from high contrast
+  const excludeSelectors = siteSettings.excludeFromHighContrast || [];
+  const excludeFromContrastSelectors = excludeSelectors.length > 0 
+    ? `:not(${excludeSelectors.join('):not(')})` 
+    : '';
+  
+  // Apply the main high contrast styles
+  const baseStyles = createBaseStyles(websiteTheme, excludeFromContrastSelectors);
+  createStyleElement('neuro-high-contrast-base', baseStyles, 'high-contrast');
+  
+  // Apply scheme-specific styles
+  applyColorScheme(initialScheme);
+  
+  // Add color scheme toggle button
+  createColorSchemeToggle(initialScheme === 'white' ? 'yellow' : 'white');
+  
+  // Fix for SVG images that might be getting clipped or hidden
+  const svgFixStyles = createSvgFixStyles();
+  createStyleElement('neuro-high-contrast-svg-fix', svgFixStyles, 'high-contrast');
+  
+  // Site-specific fixes
+  if (siteSettings.isDynamic) {
+    if (window.location.hostname.includes('youtube.com')) {
+      applyYouTubeSpecificFixes(websiteTheme);
+    } else if (window.location.hostname.includes('google.com')) {
+      applyGoogleSpecificFixes(websiteTheme);
+    }
+  }
+  
+  console.log('Improved high contrast mode applied with', initialScheme, 'scheme');
+}
+
+function createBaseStyles(websiteTheme, excludeFromContrastSelectors) {
+  let css = '';
+  
+  // Base high contrast styles
+  css += '/* Base high contrast styles */\n';
+  css += 'body.neuro-high-contrast-mode {\n';
+  css += '  /* Will be overridden by specific color schemes */\n';
+  css += '  transition: none !important;\n';
+  css += '}\n\n';
+  
+  // Text elements - more targeted selectors
+  css += '/* Text elements - more targeted selectors */\n';
+  css += 'body.neuro-high-contrast-mode h1,\n';
+  css += 'body.neuro-high-contrast-mode h2,\n';
+  css += 'body.neuro-high-contrast-mode h3,\n';
+  css += 'body.neuro-high-contrast-mode h4,\n';
+  css += 'body.neuro-high-contrast-mode h5,\n';
+  css += 'body.neuro-high-contrast-mode h6,\n';
+  css += 'body.neuro-high-contrast-mode p,\n';
+  css += 'body.neuro-high-contrast-mode li,\n';
+  css += 'body.neuro-high-contrast-mode dt,\n';
+  css += 'body.neuro-high-contrast-mode dd,\n';
+  css += 'body.neuro-high-contrast-mode label,\n';
+  css += 'body.neuro-high-contrast-mode figcaption' + excludeFromContrastSelectors + ' {\n';
+  css += '  /* Will be set by scheme */\n';
+  css += '  text-shadow: none !important;\n';
+  css += '}\n\n';
+  
+  // Links - will be customized by scheme
+  css += '/* Links - will be customized by scheme */\n';
+  css += 'body.neuro-high-contrast-mode a:link,\n';
+  css += 'body.neuro-high-contrast-mode a:visited {\n';
+  css += '  text-decoration: underline !important;\n';
+  css += '  text-decoration-thickness: 2px !important;\n';
+  css += '  text-underline-offset: 3px !important;\n';
+  css += '}\n\n';
+  
+  // Remove subtle visual effects but preserve images
+  css += '/* Remove subtle visual effects but preserve images */\n';
+  css += 'body.neuro-high-contrast-mode *' + excludeFromContrastSelectors + ' {\n';
+  css += '  text-shadow: none !important;\n';
+  css += '  box-shadow: none !important;\n';
+  css += '}\n\n';
+  
+  // Only remove decorative background images, not content images
+  css += '/* Only remove decorative background images, not content images */\n';
+  css += 'body.neuro-high-contrast-mode header,\n';
+  css += 'body.neuro-high-contrast-mode footer,\n';
+  css += 'body.neuro-high-contrast-mode nav,\n';
+  css += 'body.neuro-high-contrast-mode aside {\n';
+  css += '  background-image: none !important;\n';
+  css += '}\n\n';
+  
+  // Increase font size slightly for better readability
+  css += '/* Increase font size slightly for better readability */\n';
+  css += 'body.neuro-high-contrast-mode {\n';
+  css += '  font-size: 110% !important;\n';
+  css += '}\n\n';
+  
+  // Ensure form elements are clearly visible
+  css += '/* Ensure form elements are clearly visible */\n';
+  css += 'body.neuro-high-contrast-mode input,\n';
+  css += 'body.neuro-high-contrast-mode select,\n';
+  css += 'body.neuro-high-contrast-mode textarea,\n';
+  css += 'body.neuro-high-contrast-mode button {\n';
+  css += '  border-width: 2px !important;\n';
+  css += '  outline-width: 2px !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-high-contrast-mode input:focus,\n';
+  css += 'body.neuro-high-contrast-mode select:focus,\n';
+  css += 'body.neuro-high-contrast-mode textarea:focus,\n';
+  css += 'body.neuro-high-contrast-mode button:focus {\n';
+  css += '  outline: 3px solid currentColor !important;\n';
+  css += '  outline-offset: 2px !important;\n';
+  css += '}\n\n';
+  
+  // Improve text readability with proper spacing
+  css += '/* Improve text readability with proper spacing */\n';
+  css += 'body.neuro-high-contrast-mode p,\n';
+  css += 'body.neuro-high-contrast-mode li,\n';
+  css += 'body.neuro-high-contrast-mode blockquote {\n';
+  css += '  line-height: 1.5 !important;\n';
+  css += '  margin-bottom: 1em !important;\n';
+  css += '}\n\n';
+  
+  // Ensure buttons and interactive elements have clear outlines
+  css += '/* Ensure buttons and interactive elements have clear outlines */\n';
+  css += 'body.neuro-high-contrast-mode button,\n';
+  css += 'body.neuro-high-contrast-mode [role="button"],\n';
+  css += 'body.neuro-high-contrast-mode [type="button"],\n';
+  css += 'body.neuro-high-contrast-mode [type="submit"],\n';
+  css += 'body.neuro-high-contrast-mode [type="reset"],\n';
+  css += 'body.neuro-high-contrast-mode a[href] {\n';
+  css += '  outline: 2px solid currentColor !important;\n';
+  css += '  outline-offset: 2px !important;\n';
+  css += '}\n\n';
+  
+  // Better handling of images
+  css += '/* Better handling of images */\n';
+  css += 'body.neuro-high-contrast-mode img' + excludeFromContrastSelectors + ',\n';
+  css += 'body.neuro-high-contrast-mode svg' + excludeFromContrastSelectors + ' {\n';
+  css += '  filter: contrast(1.1) !important;\n';
+  css += '  border: 1px solid currentColor !important;\n';
+  css += '}\n\n';
+  
+  // Ensure text stays visible during webfont load
+  css += '/* Ensure text stays visible during webfont load */\n';
+  css += 'body.neuro-high-contrast-mode {\n';
+  css += '  font-display: swap !important;\n';
+  css += '}\n';
+  
+  return css;
+}
+
+function applyColorScheme(scheme) {
+  // Remove any existing scheme style
+  const existingScheme = document.getElementById('neuro-high-contrast-scheme');
+  if (existingScheme) {
+    existingScheme.remove();
+  }
+  
+  let css = '';
+  
+  if (scheme === 'white') {
+    // White on black scheme
+    css += '/* White on black scheme */\n';
+    css += 'body.neuro-high-contrast-mode {\n';
+    css += '  background-color: black !important;\n';
+    css += '  color: white !important;\n';
+    css += '}\n\n';
+    
+    // All text elements
+    css += 'body.neuro-high-contrast-mode h1,\n';
+    css += 'body.neuro-high-contrast-mode h2,\n';
+    css += 'body.neuro-high-contrast-mode h3,\n';
+    css += 'body.neuro-high-contrast-mode h4,\n';
+    css += 'body.neuro-high-contrast-mode h5,\n';
+    css += 'body.neuro-high-contrast-mode h6,\n';
+    css += 'body.neuro-high-contrast-mode p,\n';
+    css += 'body.neuro-high-contrast-mode li,\n';
+    css += 'body.neuro-high-contrast-mode dt,\n';
+    css += 'body.neuro-high-contrast-mode dd,\n';
+    css += 'body.neuro-high-contrast-mode label,\n';
+    css += 'body.neuro-high-contrast-mode span {\n';
+    css += '  color: white !important;\n';
+    css += '  text-shadow: none !important;\n';
+    css += '}\n\n';
+    
+    // More selective background color application
+    css += 'body.neuro-high-contrast-mode article,\n';
+    css += 'body.neuro-high-contrast-mode section,\n';
+    css += 'body.neuro-high-contrast-mode nav,\n';
+    css += 'body.neuro-high-contrast-mode aside,\n';
+    css += 'body.neuro-high-contrast-mode header,\n';
+    css += 'body.neuro-high-contrast-mode footer,\n';
+    css += 'body.neuro-high-contrast-mode main {\n';
+    css += '  background-color: black !important;\n';
+    css += '}\n\n';
+    
+    // Links
+    css += 'body.neuro-high-contrast-mode a:link,\n';
+    css += 'body.neuro-high-contrast-mode a:visited {\n';
+    css += '  color: #4DC3FF !important;\n';
+    css += '  text-decoration: underline !important;\n';
+    css += '}\n\n';
+    
+    css += 'body.neuro-high-contrast-mode a:hover,\n';
+    css += 'body.neuro-high-contrast-mode a:active {\n';
+    css += '  color: #8CDFFF !important;\n';
+    css += '  background-color: #333 !important;\n';
+    css += '}\n\n';
+    
+    // Buttons and form elements
+    css += 'body.neuro-high-contrast-mode button,\n';
+    css += 'body.neuro-high-contrast-mode input,\n';
+    css += 'body.neuro-high-contrast-mode select,\n';
+    css += 'body.neuro-high-contrast-mode textarea {\n';
+    css += '  border: 2px solid white !important;\n';
+    css += '  background-color: black !important;\n';
+    css += '  color: white !important;\n';
+    css += '}\n\n';
+    
+    // Tables
+    css += 'body.neuro-high-contrast-mode table,\n';
+    css += 'body.neuro-high-contrast-mode th,\n';
+    css += 'body.neuro-high-contrast-mode td {\n';
+    css += '  border: 2px solid white !important;\n';
+    css += '}\n\n';
+    
+    css += 'body.neuro-high-contrast-mode th {\n';
+    css += '  background-color: #333 !important;\n';
+    css += '  color: white !important;\n';
+    css += '}\n';
+  } else if (scheme === 'yellow') {
+    // Black on yellow scheme
+    css += '/* Black on yellow scheme */\n';
+    css += 'body.neuro-high-contrast-mode {\n';
+    css += '  background-color: #FFFF00 !important;\n';
+    css += '  color: black !important;\n';
+    css += '}\n\n';
+    
+    // All text elements
+    css += 'body.neuro-high-contrast-mode h1,\n';
+    css += 'body.neuro-high-contrast-mode h2,\n';
+    css += 'body.neuro-high-contrast-mode h3,\n';
+    css += 'body.neuro-high-contrast-mode h4,\n';
+    css += 'body.neuro-high-contrast-mode h5,\n';
+    css += 'body.neuro-high-contrast-mode h6,\n';
+    css += 'body.neuro-high-contrast-mode p,\n';
+    css += 'body.neuro-high-contrast-mode li,\n';
+    css += 'body.neuro-high-contrast-mode dt,\n';
+    css += 'body.neuro-high-contrast-mode dd,\n';
+    css += 'body.neuro-high-contrast-mode label,\n';
+    css += 'body.neuro-high-contrast-mode span {\n';
+    css += '  color: black !important;\n';
+    css += '  text-shadow: none !important;\n';
+    css += '}\n\n';
+    
+    // More selective background color application
+    css += 'body.neuro-high-contrast-mode article,\n';
+    css += 'body.neuro-high-contrast-mode section,\n';
+    css += 'body.neuro-high-contrast-mode nav,\n';
+    css += 'body.neuro-high-contrast-mode aside,\n';
+    css += 'body.neuro-high-contrast-mode header,\n';
+    css += 'body.neuro-high-contrast-mode footer,\n';
+    css += 'body.neuro-high-contrast-mode main {\n';
+    css += '  background-color: #FFFF00 !important;\n';
+    css += '}\n\n';
+    
+    // Links
+    css += 'body.neuro-high-contrast-mode a:link,\n';
+    css += 'body.neuro-high-contrast-mode a:visited {\n';
+    css += '  color: #0000CC !important;\n';
+    css += '  text-decoration: underline !important;\n';
+    css += '}\n\n';
+    
+    css += 'body.neuro-high-contrast-mode a:hover,\n';
+    css += 'body.neuro-high-contrast-mode a:active {\n';
+    css += '  color: #0000FF !important;\n';
+    css += '  background-color: #FFFFAA !important;\n';
+    css += '}\n\n';
+    
+    // Buttons and form elements
+    css += 'body.neuro-high-contrast-mode button,\n';
+    css += 'body.neuro-high-contrast-mode input,\n';
+    css += 'body.neuro-high-contrast-mode select,\n';
+    css += 'body.neuro-high-contrast-mode textarea {\n';
+    css += '  border: 2px solid black !important;\n';
+    css += '  background-color: #FFFF99 !important;\n';
+    css += '  color: black !important;\n';
+    css += '}\n\n';
+    
+    // Tables
+    css += 'body.neuro-high-contrast-mode table,\n';
+    css += 'body.neuro-high-contrast-mode th,\n';
+    css += 'body.neuro-high-contrast-mode td {\n';
+    css += '  border: 2px solid black !important;\n';
+    css += '}\n\n';
+    
+    css += 'body.neuro-high-contrast-mode th {\n';
+    css += '  background-color: #FFFF66 !important;\n';
+    css += '  color: black !important;\n';
+    css += '}\n';
+  }
+  
+  // Create and append the scheme style
+  createStyleElement('neuro-high-contrast-scheme', css, 'high-contrast');
+}
+
+function createColorSchemeToggle(targetScheme) {
+  // Remove any existing toggle button
+  const existingToggle = document.getElementById('neuro-high-contrast-toggle');
+  if (existingToggle) {
+    existingToggle.remove();
+  }
+  
+  // Create the toggle button
+  const buttonLabel = targetScheme === 'white' 
+    ? 'Switch to White/Black' 
+    : 'Switch to Black/Yellow';
+  
+  const buttonTooltip = 'Toggle high contrast color scheme between white on black and black on yellow';
+  
+  createControlButton(
+    'neuro-high-contrast-toggle',
+    buttonLabel,
+    () => toggleColorScheme(targetScheme),
+    {
+      position: 'bottom-right',
+      tooltip: buttonTooltip
+    }
+  );
+}
+
+function toggleColorScheme(targetScheme) {
+  applyColorScheme(targetScheme);
+  
+  // Update the toggle button to switch to the other scheme
+  const newTargetScheme = targetScheme === 'white' ? 'yellow' : 'white';
+  createColorSchemeToggle(newTargetScheme);
+}
+
+function createSvgFixStyles() {
+  let css = '';
+  
+  css += 'body.neuro-high-contrast-mode svg {\n';
+  css += '  overflow: visible !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-high-contrast-mode img {\n';
+  css += '  max-width: 100% !important;\n';
+  css += '  object-fit: contain !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-high-contrast-mode [style*="background-image"] {\n';
+  css += '  background-size: contain !important;\n';
+  css += '  background-position: center !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-high-contrast-mode img,\n';
+  css += 'body.neuro-high-contrast-mode video,\n';
+  css += 'body.neuro-high-contrast-mode iframe,\n';
+  css += 'body.neuro-high-contrast-mode canvas,\n';
+  css += 'body.neuro-high-contrast-mode [style*="background-image"] {\n';
+  css += '  filter: none !important;\n';
+  css += '  -webkit-filter: none !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-high-contrast-mode img[src],\n';
+  css += 'body.neuro-high-contrast-mode [style*="background-image"] {\n';
+  css += '  display: inline-block !important;\n';
+  css += '  visibility: visible !important;\n';
+  css += '}\n';
+  
+  return css;
+}
+
+function applyYouTubeSpecificFixes(websiteTheme) {
+  let css = '';
+  
+  // Colors based on scheme
+  const colors = websiteTheme === 'dark'
+    ? {
+        background: 'black',
+        text: 'white',
+        outline: '#4DC3FF',
+        links: '#4DC3FF'
+      }
+    : {
+        background: '#FFFF00',
+        text: 'black',
+        outline: 'black',
+        links: '#0000CC'
+      };
+  
+  // YouTube-specific fixes
+  css += '/* YouTube specific fixes */\n';
+  
+  // Keep the sidebar visible
+  css += 'body.neuro-high-contrast-mode ytd-guide-renderer,\n';
+  css += 'body.neuro-high-contrast-mode tp-yt-app-drawer {\n';
+  css += '  display: block !important;\n';
+  css += '  visibility: visible !important;\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix sidebar items
+  css += 'body.neuro-high-contrast-mode ytd-guide-entry-renderer,\n';
+  css += 'body.neuro-high-contrast-mode ytd-guide-section-renderer {\n';
+  css += '  background-color: transparent !important;\n';
+  css += '  color: ' + colors.text + ' !important;\n';
+  css += '  outline: 1px solid ' + colors.outline + ' !important;\n';
+  css += '  margin: 4px 0 !important;\n';
+  css += '}\n\n';
+  
+  // Fix the top bar
+  css += 'body.neuro-high-contrast-mode ytd-masthead {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border-bottom: 2px solid ' + colors.outline + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix video player controls
+  css += 'body.neuro-high-contrast-mode .ytp-chrome-bottom {\n';
+  css += '  background-color: rgba(0, 0, 0, 0.7) !important;\n';
+  css += '}\n\n';
+  
+  // Don't change video player
+  css += 'body.neuro-high-contrast-mode video,\n';
+  css += 'body.neuro-high-contrast-mode .html5-video-player,\n';
+  css += 'body.neuro-high-contrast-mode .html5-video-container {\n';
+  css += '  background-color: transparent !important;\n';
+  css += '  outline: none !important;\n';
+  css += '  border: none !important;\n';
+  css += '}\n\n';
+  
+  // Fix thumbnails
+  css += 'body.neuro-high-contrast-mode ytd-thumbnail {\n';
+  css += '  border: 2px solid ' + colors.outline + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix video metadata
+  css += 'body.neuro-high-contrast-mode ytd-watch-metadata,\n';
+  css += 'body.neuro-high-contrast-mode ytd-video-primary-info-renderer {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border: 2px solid ' + colors.outline + ' !important;\n';
+  css += '  padding: 12px !important;\n';
+  css += '  margin: 12px 0 !important;\n';
+  css += '}\n\n';
+  
+  // Fix comments
+  css += 'body.neuro-high-contrast-mode ytd-comments {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border: 2px solid ' + colors.outline + ' !important;\n';
+  css += '  padding: 12px !important;\n';
+  css += '}\n\n';
+  
+  // Fix individual comments
+  css += 'body.neuro-high-contrast-mode ytd-comment-renderer {\n';
+  css += '  border-bottom: 1px solid ' + colors.outline + ' !important;\n';
+  css += '  padding: 12px 0 !important;\n';
+  css += '  margin-bottom: 12px !important;\n';
+  css += '}\n';
+  
+  createStyleElement('neuro-high-contrast-youtube', css, 'high-contrast');
+}
+
+function applyGoogleSpecificFixes(websiteTheme) {
+  let css = '';
+  
+  // Colors based on scheme
+  const colors = websiteTheme === 'dark'
+    ? {
+        background: 'black',
+        text: 'white',
+        outline: 'white',
+        links: '#4DC3FF'
+      }
+    : {
+        background: '#FFFF00',
+        text: 'black',
+        outline: 'black',
+        links: '#0000CC'
+      };
+  
+  // Google-specific fixes
+  css += '/* Google specific fixes */\n';
+  
+  // Fix search box
+  css += 'body.neuro-high-contrast-mode .gLFyf {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  color: ' + colors.text + ' !important;\n';
+  css += '  border: 2px solid ' + colors.outline + ' !important;\n';
+  css += '  padding: 8px !important;\n';
+  css += '}\n\n';
+  
+  // Fix search results
+  css += 'body.neuro-high-contrast-mode .g {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border: 2px solid ' + colors.outline + ' !important;\n';
+  css += '  padding: 12px !important;\n';
+  css += '  margin-bottom: 16px !important;\n';
+  css += '}\n\n';
+  
+  // Fix links
+  css += 'body.neuro-high-contrast-mode .g a:link,\n';
+  css += 'body.neuro-high-contrast-mode .g a:visited {\n';
+  css += '  color: ' + colors.links + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix the top bar
+  css += 'body.neuro-high-contrast-mode .sfbg {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border-bottom: 2px solid ' + colors.outline + ' !important;\n';
+  css += '}\n';
+  
+  createStyleElement('neuro-high-contrast-google', css, 'high-contrast');
+}

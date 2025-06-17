@@ -1,0 +1,464 @@
+// Calm/Low-Stimulation Mode (Autism-Friendly) implementation
+import { createStyleElement, createDynamicContentObserver } from '../utils/common';
+
+export function applyCalmMode() {
+  // Add a class to the body
+  document.body.classList.add('neuro-calm-mode');
+  
+  // Get website theme (dark or light) and site-specific settings
+  const websiteTheme = window.neuroCustomizerContext?.websiteTheme || 'light';
+  const siteSettings = window.neuroCustomizerContext?.siteSettings || {};
+  
+  // Create base styles for calm mode
+  const baseStyles = createBaseStyles(websiteTheme);
+  createStyleElement('neuro-calm-base', baseStyles, 'calm');
+  
+  // Apply site-specific fixes
+  if (siteSettings.isDynamic) {
+    if (window.location.hostname.includes('youtube.com')) {
+      applyYouTubeSpecificFixes(websiteTheme);
+    } else if (window.location.hostname.includes('google.com')) {
+      applyGoogleSpecificFixes(websiteTheme);
+    }
+    
+    // Create observer for dynamic content
+    createDynamicContentObserver(() => {
+      removeAnimationsFromNewElements();
+    });
+  }
+  
+  // Store original styles for elements we'll modify
+  storeOriginalStyles();
+  
+  console.log('Improved Calm/low-stimulation mode applied with', websiteTheme, 'theme');
+}
+
+function createBaseStyles(websiteTheme) {
+  // Choose color palette based on website theme
+  const colors = websiteTheme === 'dark' 
+    ? {
+        background: '#2A2A33',
+        text: '#E0E0E6',
+        surface: '#353542',
+        accent: '#8A85FF',
+        links: '#B4B1FF',
+        borders: '#454552'
+      }
+    : {
+        background: '#F0F3F6', 
+        text: '#404040',
+        surface: '#FFFFFF',
+        accent: '#6366F1',
+        links: '#5155E5',
+        borders: '#D1D5DB'
+      };
+  
+  // Build CSS with concatenation to avoid template literal issues
+  let css = '';
+  
+  // Soft color palette
+  css += 'body.neuro-calm-mode {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  color: ' + colors.text + ' !important;\n';
+  css += '  filter: saturate(85%) !important;\n';
+  css += '  transition: none !important;\n';
+  css += '}\n\n';
+  
+  // Apply softer colors to all elements
+  css += 'body.neuro-calm-mode * {\n';
+  css += '  animation: none !important;\n';
+  css += '  transition: none !important;\n';
+  css += '}\n\n';
+  
+  // Muted text
+  css += 'body.neuro-calm-mode h1,\n';
+  css += 'body.neuro-calm-mode h2,\n';
+  css += 'body.neuro-calm-mode h3,\n';
+  css += 'body.neuro-calm-mode h4,\n';
+  css += 'body.neuro-calm-mode h5,\n';
+  css += 'body.neuro-calm-mode h6,\n';
+  css += 'body.neuro-calm-mode p,\n';
+  css += 'body.neuro-calm-mode li,\n';
+  css += 'body.neuro-calm-mode span {\n';
+  css += '  color: ' + colors.text + ' !important;\n';
+  css += '  font-weight: normal !important;\n';
+  css += '  text-shadow: none !important;\n';
+  css += '}\n\n';
+  
+  // Soften backgrounds but preserve structure
+  css += 'body.neuro-calm-mode div,\n';
+  css += 'body.neuro-calm-mode section,\n';
+  css += 'body.neuro-calm-mode article,\n';
+  css += 'body.neuro-calm-mode aside,\n';
+  css += 'body.neuro-calm-mode nav {\n';
+  css += '  background-image: none !important;\n';
+  css += '  box-shadow: none !important;\n';
+  css += '}\n\n';
+  
+  // Reduce busy backgrounds without destroying layouts
+  css += 'body.neuro-calm-mode [style*="background-image"]:not(img):not([role="img"]) {\n';
+  css += '  background-image: none !important;\n';
+  css += '  background-color: ' + colors.surface + ' !important;\n';
+  css += '}\n\n';
+  
+  // Reduce color intensity of images but preserve them
+  css += 'body.neuro-calm-mode img,\n';
+  css += 'body.neuro-calm-mode video,\n';
+  css += 'body.neuro-calm-mode canvas,\n';
+  css += 'body.neuro-calm-mode svg,\n';
+  css += 'body.neuro-calm-mode [role="img"] {\n';
+  css += '  filter: saturate(70%) brightness(0.95) !important;\n';
+  css += '}\n\n';
+  
+  // Soften borders
+  css += 'body.neuro-calm-mode * {\n';
+  css += '  border-color: ' + colors.borders + ' !important;\n';
+  css += '}\n\n';
+  
+  // Make links less vibrant but still visible
+  css += 'body.neuro-calm-mode a:link,\n';
+  css += 'body.neuro-calm-mode a:visited {\n';
+  css += '  color: ' + colors.links + ' !important;\n';
+  css += '  text-decoration: none !important;\n';
+  css += '  border-bottom: 1px solid ' + colors.links + ' !important;\n';
+  css += '}\n\n';
+  
+  // Reduce button intensity
+  css += 'body.neuro-calm-mode button,\n';
+  css += 'body.neuro-calm-mode input[type="button"],\n';
+  css += 'body.neuro-calm-mode input[type="submit"] {\n';
+  css += '  background-color: ' + colors.surface + ' !important;\n';
+  css += '  color: ' + colors.text + ' !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  box-shadow: none !important;\n';
+  css += '}\n\n';
+  
+  // Improve focus
+  css += 'body.neuro-calm-mode *:focus {\n';
+  css += '  outline: 2px solid ' + colors.accent + ' !important;\n';
+  css += '  outline-offset: 2px !important;\n';
+  css += '}\n\n';
+  
+  // Reduce font boldness
+  css += 'body.neuro-calm-mode strong,\n';
+  css += 'body.neuro-calm-mode b {\n';
+  css += '  font-weight: normal !important;\n';
+  css += '}\n\n';
+  
+  // Enlarge clickable elements
+  css += 'body.neuro-calm-mode a,\n';
+  css += 'body.neuro-calm-mode button,\n';
+  css += 'body.neuro-calm-mode input[type="button"],\n';
+  css += 'body.neuro-calm-mode input[type="submit"] {\n';
+  css += '  padding: 0.5em !important;\n';
+  css += '  border-radius: 4px !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  transition: none !important;\n';
+  css += '}\n\n';
+  
+  // No hover effects
+  css += 'body.neuro-calm-mode a:hover,\n';
+  css += 'body.neuro-calm-mode button:hover,\n';
+  css += 'body.neuro-calm-mode [role="button"]:hover {\n';
+  css += '  transform: none !important;\n';
+  css += '  filter: none !important;\n';
+  css += '  background-image: none !important;\n';
+  css += '  text-decoration: underline !important;\n';
+  css += '}\n\n';
+  
+  // Remove flashing and blinking elements
+  css += 'body.neuro-calm-mode [class*="flash"],\n';
+  css += 'body.neuro-calm-mode [class*="blink"],\n';
+  css += 'body.neuro-calm-mode [class*="alert"],\n';
+  css += 'body.neuro-calm-mode [class*="attention"] {\n';
+  css += '  animation: none !important;\n';
+  css += '  transition: none !important;\n';
+  css += '  text-decoration: underline !important;\n';
+  css += '}\n\n';
+  
+  // Add soft borders to distinguish content areas
+  css += 'body.neuro-calm-mode article,\n';
+  css += 'body.neuro-calm-mode section,\n';
+  css += 'body.neuro-calm-mode aside,\n';
+  css += 'body.neuro-calm-mode nav,\n';
+  css += 'body.neuro-calm-mode .card,\n';
+  css += 'body.neuro-calm-mode [class*="card"],\n';
+  css += 'body.neuro-calm-mode [class*="box"],\n';
+  css += 'body.neuro-calm-mode [class*="container"] {\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  border-radius: 8px !important;\n';
+  css += '  padding: 8px !important;\n';
+  css += '  margin: 8px !important;\n';
+  css += '}\n\n';
+  
+  // Apply softer colors to form elements
+  css += 'body.neuro-calm-mode input,\n';
+  css += 'body.neuro-calm-mode textarea,\n';
+  css += 'body.neuro-calm-mode select {\n';
+  css += '  background-color: ' + colors.surface + ' !important;\n';
+  css += '  color: ' + colors.text + ' !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  border-radius: 4px !important;\n';
+  css += '  padding: 8px !important;\n';
+  css += '}\n\n';
+  
+  // Handle images gently - blur only very busy or bright images
+  css += 'body.neuro-calm-mode img[src*="banner"],\n';
+  css += 'body.neuro-calm-mode img[src*="ad"],\n';
+  css += 'body.neuro-calm-mode [class*="banner"] img,\n';
+  css += 'body.neuro-calm-mode [class*="advertisement"] img,\n';
+  css += 'body.neuro-calm-mode [class*="background"] img {\n';
+  css += '  filter: blur(2px) saturate(85%) !important;\n';
+  css += '}\n\n';
+  
+  // But keep content images clear
+  css += 'body.neuro-calm-mode img:not([src*="banner"]):not([src*="ad"]):not([class*="banner"]) {\n';
+  css += '  filter: saturate(90%) !important;\n';
+  css += '}\n\n';
+  
+  // Fix iframe content
+  css += 'body.neuro-calm-mode iframe {\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix tables
+  css += 'body.neuro-calm-mode table {\n';
+  css += '  border-collapse: separate !important;\n';
+  css += '  border-spacing: 2px !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-calm-mode th,\n';
+  css += 'body.neuro-calm-mode td {\n';
+  css += '  padding: 8px !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '}\n';
+  
+  return css;
+}
+
+/**
+ * Store original styles for elements we'll modify
+ */
+function storeOriginalStyles() {
+  // Elements with animations
+  const animationSelectors = [
+    '[class*="anim"]',
+    '[class*="motion"]',
+    '[class*="move"]',
+    '[class*="slide"]',
+    '[class*="fade"]',
+    '[class*="transition"]'
+  ];
+  
+  animationSelectors.forEach(selector => {
+    const elements = document.querySelectorAll(selector);
+    elements.forEach(element => {
+      if (!element.hasAttribute('data-neuro-original-style')) {
+        element.setAttribute('data-neuro-original-style', element.getAttribute('style') || '');
+        element.style.animation = 'none';
+        element.style.transition = 'none';
+      }
+    });
+  });
+}
+
+/**
+ * Remove animations from dynamically added elements
+ */
+function removeAnimationsFromNewElements() {
+  // Apply to newly added elements
+  const animationSelectors = [
+    '[class*="anim"]',
+    '[class*="motion"]',
+    '[class*="move"]',
+    '[class*="slide"]',
+    '[class*="fade"]',
+    '[class*="transition"]'
+  ];
+  
+  animationSelectors.forEach(selector => {
+    const elements = document.querySelectorAll(selector + ':not([data-neuro-calm-processed])');
+    elements.forEach(element => {
+      element.style.animation = 'none';
+      element.style.transition = 'none';
+      element.setAttribute('data-neuro-calm-processed', 'true');
+    });
+  });
+}
+
+/**
+ * Apply YouTube-specific fixes for calm mode
+ * @param {string} websiteTheme - 'dark' or 'light'
+ */
+function applyYouTubeSpecificFixes(websiteTheme) {
+  // Colors based on theme
+  const colors = websiteTheme === 'dark' 
+    ? {
+        background: '#0F0F0F',
+        text: '#E0E0E6',
+        surface: '#272730',
+        accent: '#8A85FF',
+        links: '#B4B1FF',
+        borders: '#454552'
+      }
+    : {
+        background: '#FFFFFF', 
+        text: '#404040',
+        surface: '#F9F9F9',
+        accent: '#6366F1',
+        links: '#5155E5',
+        borders: '#D1D5DB'
+      };
+  
+  let css = '';
+  
+  // YouTube-specific fixes
+  css += '/* YouTube-specific fixes for calm mode */\n\n';
+  
+  // Fix for YouTube sidebar
+  css += '/* Fix for YouTube sidebar - keep it visible and styled properly */\n';
+  css += 'body.neuro-calm-mode ytd-guide-renderer,\n';
+  css += 'body.neuro-calm-mode tp-yt-app-drawer {\n';
+  css += '  display: block !important;\n';
+  css += '  visibility: visible !important;\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border-right: 1px solid ' + colors.borders + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix sidebar items
+  css += '/* Fix sidebar items */\n';
+  css += 'body.neuro-calm-mode ytd-guide-entry-renderer,\n';
+  css += 'body.neuro-calm-mode ytd-guide-section-renderer {\n';
+  css += '  background-color: transparent !important;\n';
+  css += '  border: none !important;\n';
+  css += '  margin: 2px 0 !important;\n';
+  css += '  padding: 6px !important;\n';
+  css += '}\n\n';
+  
+  // Make the top bar calmer
+  css += '/* Make the top bar calmer */\n';
+  css += 'body.neuro-calm-mode ytd-masthead {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border-bottom: 1px solid ' + colors.borders + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix video player
+  css += '/* Fix video player - don\'t modify playback functionality */\n';
+  css += 'body.neuro-calm-mode video,\n';
+  css += 'body.neuro-calm-mode .html5-video-container,\n';
+  css += 'body.neuro-calm-mode .ytp-chrome-bottom {\n';
+  css += '  border: none !important;\n';
+  css += '  border-radius: 0 !important;\n';
+  css += '  background-color: transparent !important;\n';
+  css += '}\n\n';
+  
+  // Fix thumbnails
+  css += '/* Fix thumbnails - don\'t blur them as they are content */\n';
+  css += 'body.neuro-calm-mode ytd-thumbnail img,\n';
+  css += 'body.neuro-calm-mode .ytp-videowall-still-image {\n';
+  css += '  filter: saturate(90%) !important;\n';
+  css += '}\n\n';
+  
+  // Fix video info section
+  css += '/* Fix video info section */\n';
+  css += 'body.neuro-calm-mode ytd-watch-metadata,\n';
+  css += 'body.neuro-calm-mode ytd-video-primary-info-renderer {\n';
+  css += '  background-color: ' + colors.surface + ' !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  border-radius: 8px !important;\n';
+  css += '  padding: 12px !important;\n';
+  css += '  margin: 12px 0 !important;\n';
+  css += '}\n\n';
+  
+  // Fix comments section
+  css += '/* Fix comments section */\n';
+  css += 'body.neuro-calm-mode ytd-comments {\n';
+  css += '  background-color: ' + colors.surface + ' !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  border-radius: 8px !important;\n';
+  css += '  padding: 12px !important;\n';
+  css += '  margin: 12px 0 !important;\n';
+  css += '}\n\n';
+  
+  // Fix individual comments
+  css += '/* Fix individual comments */\n';
+  css += 'body.neuro-calm-mode ytd-comment-renderer {\n';
+  css += '  border-bottom: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  padding: 12px 0 !important;\n';
+  css += '  margin-bottom: 12px !important;\n';
+  css += '}\n';
+  
+  createStyleElement('neuro-calm-youtube-fix', css, 'calm');
+}
+
+/**
+ * Apply Google-specific fixes for calm mode
+ * @param {string} websiteTheme - 'dark' or 'light'
+ */
+function applyGoogleSpecificFixes(websiteTheme) {
+  // Colors based on theme
+  const colors = websiteTheme === 'dark' 
+    ? {
+        background: '#2A2A33',
+        text: '#E0E0E6',
+        surface: '#353542',
+        accent: '#8A85FF',
+        links: '#B4B1FF',
+        borders: '#454552'
+      }
+    : {
+        background: '#F0F3F6', 
+        text: '#404040',
+        surface: '#FFFFFF',
+        accent: '#6366F1',
+        links: '#5155E5',
+        borders: '#D1D5DB'
+      };
+  
+  let css = '';
+  
+  // Google-specific fixes
+  css += '/* Google-specific fixes for calm mode */\n\n';
+  
+  // Fix search box
+  css += '/* Fix search box */\n';
+  css += 'body.neuro-calm-mode .gLFyf {\n';
+  css += '  background-color: ' + colors.surface + ' !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  padding: 8px !important;\n';
+  css += '}\n\n';
+  
+  // Fix search results
+  css += '/* Fix search results */\n';
+  css += 'body.neuro-calm-mode .g {\n';
+  css += '  background-color: ' + colors.surface + ' !important;\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  border-radius: 8px !important;\n';
+  css += '  padding: 12px !important;\n';
+  css += '  margin-bottom: 16px !important;\n';
+  css += '}\n\n';
+  
+  // Fix results links
+  css += '/* Fix results links */\n';
+  css += 'body.neuro-calm-mode .g a:link,\n';
+  css += 'body.neuro-calm-mode .g a:visited {\n';
+  css += '  color: ' + colors.links + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix the top bar
+  css += '/* Fix the top bar */\n';
+  css += 'body.neuro-calm-mode .sfbg {\n';
+  css += '  background-color: ' + colors.background + ' !important;\n';
+  css += '  border-bottom: 1px solid ' + colors.borders + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix Google image results
+  css += '/* Fix Google image results */\n';
+  css += 'body.neuro-calm-mode .isv-r {\n';
+  css += '  border: 1px solid ' + colors.borders + ' !important;\n';
+  css += '  border-radius: 8px !important;\n';
+  css += '  overflow: hidden !important;\n';
+  css += '}\n';
+  
+  createStyleElement('neuro-calm-google-fix', css, 'calm');
+}

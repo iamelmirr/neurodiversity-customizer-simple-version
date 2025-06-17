@@ -1,0 +1,514 @@
+// Focus mode (ADHD/Attention Support) implementation
+import { createStyleElement, createControlButton, createDynamicContentObserver } from '../utils/common';
+
+export function applyFocusMode() {
+  // Add a class to the body
+  document.body.classList.add('neuro-focus-mode');
+  
+  // Get website theme (dark or light) and site-specific settings
+  const websiteTheme = window.neuroCustomizerContext?.websiteTheme || 'light';
+  const siteSettings = window.neuroCustomizerContext?.siteSettings || {};
+  
+  // Create base focus styles
+  const baseStyles = createBaseFocusStyles(websiteTheme);
+  createStyleElement('neuro-focus-base', baseStyles, 'focus');
+  
+  // Apply site-specific fixes if needed
+  if (siteSettings.isDynamic) {
+    if (window.location.hostname.includes('youtube.com')) {
+      applyYouTubeSpecificFixes(websiteTheme);
+    }
+    
+    // Create observer for dynamic content
+    createDynamicContentObserver(() => {
+      applyFocusToNewElements(websiteTheme);
+    });
+  }
+  
+  // Create and add reading ruler
+  createReadingRuler(websiteTheme);
+  
+  // Add keyboard hint tooltip
+  createKeyboardHintTooltip(websiteTheme);
+  
+  console.log('Improved Focus mode applied with', websiteTheme, 'theme');
+}
+
+/**
+ * Create the base CSS styles for focus mode
+ * @param {string} websiteTheme - 'dark' or 'light'
+ * @returns {string} CSS styles
+ */
+function createBaseFocusStyles(websiteTheme) {
+  // Define color palette based on theme
+  const colors = websiteTheme === 'dark'
+    ? {
+        highlight: 'rgba(120, 130, 240, 0.1)',
+        border: 'rgba(120, 130, 240, 0.5)',
+        muted: 'rgba(200, 200, 210, 0.8)',
+        ruler: 'rgba(120, 130, 240, 0.1)',
+        rulerBorder: 'rgba(120, 130, 240, 0.3)',
+        paragraphBg: 'rgba(50, 50, 60, 0.2)',
+        textHighlight: '#A8ADFA'
+      }
+    : {
+        highlight: 'rgba(99, 102, 241, 0.05)',
+        border: 'rgba(99, 102, 241, 0.5)',
+        muted: 'rgba(50, 50, 50, 0.8)',
+        ruler: 'rgba(99, 102, 241, 0.08)',
+        rulerBorder: 'rgba(99, 102, 241, 0.3)',
+        paragraphBg: 'rgba(245, 245, 250, 0.5)',
+        textHighlight: '#6366F1'
+      };
+  
+  let css = '';
+  
+  // Base styles for focus mode
+  css += '/* Base styles for focus mode */\n';
+  css += 'body.neuro-focus-mode {\n';
+  css += '  scroll-behavior: smooth !important;\n';
+  css += '}\n\n';
+  
+  // Highlight focused paragraphs
+  css += '/* Highlight focused paragraphs */\n';
+  css += 'body.neuro-focus-mode p,\n';
+  css += 'body.neuro-focus-mode li {\n';
+  css += '  padding: 0.5em !important;\n';
+  css += '  border-left: 3px solid ' + colors.border + ' !important;\n';
+  css += '  line-height: 1.6 !important;\n';
+  css += '  margin-bottom: 1em !important;\n';
+  css += '  transition: background-color 0.2s ease !important;\n';
+  css += '}\n\n';
+  
+  // Highlight on hover
+  css += '/* Highlight on hover */\n';
+  css += 'body.neuro-focus-mode p:hover,\n';
+  css += 'body.neuro-focus-mode li:hover {\n';
+  css += '  background-color: ' + colors.highlight + ' !important;\n';
+  css += '}\n\n';
+  
+  // Make headings stand out more
+  css += '/* Make headings stand out more */\n';
+  css += 'body.neuro-focus-mode h1,\n';
+  css += 'body.neuro-focus-mode h2,\n';
+  css += 'body.neuro-focus-mode h3,\n';
+  css += 'body.neuro-focus-mode h4,\n';
+  css += 'body.neuro-focus-mode h5,\n';
+  css += 'body.neuro-focus-mode h6 {\n';
+  css += '  border-bottom: 2px solid ' + colors.border + ' !important;\n';
+  css += '  padding-bottom: 0.3em !important;\n';
+  css += '  margin-top: 1.5em !important;\n';
+  css += '  margin-bottom: 0.8em !important;\n';
+  css += '  clear: both !important;\n';
+  css += '}\n\n';
+  
+  // Reduce animation distractions without breaking functionality
+  css += '/* Reduce animation distractions without breaking functionality */\n';
+  css += 'body.neuro-focus-mode * {\n';
+  css += '  animation-duration: 0.1s !important;\n';
+  css += '}\n\n';
+  
+  // Subtly reduce visual prominence of likely distracting elements
+  css += '/* Subtly reduce visual prominence of likely distracting elements */\n';
+  css += 'body.neuro-focus-mode aside,\n';
+  css += 'body.neuro-focus-mode [role="complementary"],\n';
+  css += 'body.neuro-focus-mode nav:not([aria-label="breadcrumb"]):not([aria-label="Breadcrumb"]),\n';
+  css += 'body.neuro-focus-mode [role="banner"],\n';
+  css += 'body.neuro-focus-mode [role="navigation"],\n';
+  css += 'body.neuro-focus-mode footer,\n';
+  css += 'body.neuro-focus-mode [role="contentinfo"] {\n';
+  css += '  opacity: 0.75 !important;\n';
+  css += '  filter: grayscale(30%) !important;\n';
+  css += '  transition: opacity 0.2s ease, filter 0.2s ease !important;\n';
+  css += '}\n\n';
+  
+  // Restore prominence when hovered
+  css += '/* Restore prominence when hovered */\n';
+  css += 'body.neuro-focus-mode aside:hover,\n';
+  css += 'body.neuro-focus-mode [role="complementary"]:hover,\n';
+  css += 'body.neuro-focus-mode nav:not([aria-label="breadcrumb"]):not([aria-label="Breadcrumb"]):hover,\n';
+  css += 'body.neuro-focus-mode [role="banner"]:hover,\n';
+  css += 'body.neuro-focus-mode [role="navigation"]:hover,\n';
+  css += 'body.neuro-focus-mode footer:hover,\n';
+  css += 'body.neuro-focus-mode [role="contentinfo"]:hover {\n';
+  css += '  opacity: 1 !important;\n';
+  css += '  filter: grayscale(0%) !important;\n';
+  css += '}\n\n';
+  
+  // Links
+  css += '/* Links */\n';
+  css += 'body.neuro-focus-mode a:link,\n';
+  css += 'body.neuro-focus-mode a:visited {\n';
+  css += '  color: ' + colors.textHighlight + ' !important;\n';
+  css += '  text-decoration: underline !important;\n';
+  css += '  text-underline-offset: 0.2em !important;\n';
+  css += '  transition: color 0.2s ease !important;\n';
+  css += '}\n\n';
+  
+  // Improve form elements
+  css += '/* Improve form elements */\n';
+  css += 'body.neuro-focus-mode input:focus,\n';
+  css += 'body.neuro-focus-mode textarea:focus,\n';
+  css += 'body.neuro-focus-mode select:focus,\n';
+  css += 'body.neuro-focus-mode button:focus {\n';
+  css += '  outline: 2px solid ' + colors.textHighlight + ' !important;\n';
+  css += '  outline-offset: 2px !important;\n';
+  css += '}\n\n';
+  
+  // Improve blockquotes and code blocks
+  css += '/* Improve blockquotes and code blocks */\n';
+  css += 'body.neuro-focus-mode blockquote,\n';
+  css += 'body.neuro-focus-mode pre {\n';
+  css += '  border-left: 4px solid ' + colors.border + ' !important;\n';
+  css += '  padding: 0.75em 1em !important;\n';
+  css += '  background-color: ' + colors.paragraphBg + ' !important;\n';
+  css += '  margin-bottom: 1.2em !important;\n';
+  css += '  border-radius: 0 4px 4px 0 !important;\n';
+  css += '}\n\n';
+  
+  // Restore on hover/focus
+  css += '/* Restore on hover/focus */\n';
+  css += 'body.neuro-focus-mode aside:hover,\n';
+  css += 'body.neuro-focus-mode [role="complementary"]:hover,\n';
+  css += 'body.neuro-focus-mode nav:hover,\n';
+  css += 'body.neuro-focus-mode [role="banner"]:hover,\n';
+  css += 'body.neuro-focus-mode [role="navigation"]:hover,\n';
+  css += 'body.neuro-focus-mode footer:hover,\n';
+  css += 'body.neuro-focus-mode [role="contentinfo"]:hover,\n';
+  css += 'body.neuro-focus-mode aside:focus-within,\n';
+  css += 'body.neuro-focus-mode [role="complementary"]:focus-within,\n';
+  css += 'body.neuro-focus-mode nav:focus-within,\n';
+  css += 'body.neuro-focus-mode [role="banner"]:focus-within,\n';
+  css += 'body.neuro-focus-mode [role="navigation"]:focus-within,\n';
+  css += 'body.neuro-focus-mode footer:focus-within,\n';
+  css += 'body.neuro-focus-mode [role="contentinfo"]:focus-within {\n';
+  css += '  opacity: 1 !important;\n';
+  css += '  filter: none !important;\n';
+  css += '}\n\n';
+  
+  // Only target actual ads, not general images
+  css += '/* Only target actual ads, not general images */\n';
+  css += 'body.neuro-focus-mode iframe[src*="ad.doubleclick"],\n';
+  css += 'body.neuro-focus-mode iframe[src*="googleadservices"],\n';
+  css += 'body.neuro-focus-mode div[id^="div-gpt-ad"],\n';
+  css += 'body.neuro-focus-mode div[data-ad],\n';
+  css += 'body.neuro-focus-mode div[class^="AdTheme"] {\n';
+  css += '  opacity: 0.3 !important;\n';
+  css += '}\n\n';
+  
+  // Only reduce distraction from autoplaying videos, not all videos
+  css += '/* Only reduce distraction from autoplaying videos, not all videos */\n';
+  css += 'body.neuro-focus-mode video[autoplay],\n';
+  css += 'body.neuro-focus-mode video[data-autoplay="true"] {\n';
+  css += '  opacity: 0.4 !important;\n';
+  css += '}\n\n';
+  
+  // Improve visibility of videos on hover
+  css += '/* Improve visibility of videos on hover */\n';
+  css += 'body.neuro-focus-mode video:hover {\n';
+  css += '  opacity: 1 !important;\n';
+  css += '  filter: none !important;\n';
+  css += '}\n\n';
+  
+  // Reading ruler styles
+  css += '/* Reading ruler styles - improved contrast and visibility */\n';
+  css += '#neuro-reading-ruler {\n';
+  css += '  position: fixed;\n';
+  css += '  left: 0;\n';
+  css += '  width: 100%;\n';
+  css += '  height: 32px;\n';
+  css += '  background-color: ' + colors.ruler + ';\n';
+  css += '  border-top: 1px solid ' + colors.rulerBorder + ';\n';
+  css += '  border-bottom: 1px solid ' + colors.rulerBorder + ';\n';
+  css += '  pointer-events: none;\n';
+  css += '  z-index: 9999;\n';
+  css += '  box-shadow: 0 0 8px 8px rgba(99, 102, 241, 0.02);\n';
+  css += '  transition: top 0.1s ease;\n';
+  css += '}\n';
+  
+  return css;
+}
+
+/**
+ * Create a reading ruler that follows cursor or can be controlled with keyboard
+ * @param {string} websiteTheme - 'dark' or 'light'
+ */
+function createReadingRuler(websiteTheme) {
+  // Check if ruler already exists
+  if (document.getElementById('neuro-reading-ruler')) {
+    return;
+  }
+  
+  // Colors based on theme
+  const colors = websiteTheme === 'dark'
+    ? {
+        ruler: 'rgba(120, 130, 240, 0.12)',
+        rulerBorder: 'rgba(120, 130, 240, 0.35)'
+      }
+    : {
+        ruler: 'rgba(99, 102, 241, 0.08)',
+        rulerBorder: 'rgba(99, 102, 241, 0.25)'
+      };
+  
+  // Create ruler element
+  const ruler = document.createElement('div');
+  ruler.id = 'neuro-reading-ruler';
+  ruler.setAttribute('data-neuro-customizer', 'focus');
+  ruler.setAttribute('aria-hidden', 'true');
+  
+  ruler.style.cssText = 
+    'position: fixed; ' +
+    'left: 0; ' +
+    'width: 100%; ' +
+    'height: 32px; ' +
+    'background-color: ' + colors.ruler + '; ' +
+    'border-top: 1px solid ' + colors.rulerBorder + '; ' +
+    'border-bottom: 1px solid ' + colors.rulerBorder + '; ' +
+    'pointer-events: none; ' +
+    'z-index: 99999; ' +
+    'transition: top 0.1s ease; ' +
+    'display: none;';
+  
+  document.body.appendChild(ruler);
+  
+  // Track for cleanup
+  if (!window.neuroCustomizerElements) {
+    window.neuroCustomizerElements = [];
+  }
+  window.neuroCustomizerElements.push(ruler);
+  
+  // Add keyboard controls
+  document.addEventListener('keydown', (e) => {
+    if (!document.body.classList.contains('neuro-focus-mode')) return;
+    
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault(); // Prevent page scrolling
+      
+      // Show ruler if it's hidden
+      if (ruler.style.display === 'none') {
+        ruler.style.display = 'block';
+        ruler.style.top = (window.innerHeight / 2) + 'px';
+      }
+      
+      // Move ruler up or down
+      const currentTop = parseInt(ruler.style.top) || window.innerHeight / 2;
+      const newTop = e.key === 'ArrowUp' 
+        ? Math.max(0, currentTop - 20) 
+        : Math.min(window.innerHeight - 32, currentTop + 20);
+      
+      ruler.style.top = newTop + 'px';
+    } else if (e.key === 'Escape') {
+      // Hide ruler
+      ruler.style.display = 'none';
+    }
+  });
+  
+  // Hide on mouse movement
+  let timeout;
+  document.addEventListener('mousemove', () => {
+    ruler.style.display = 'none';
+    clearTimeout(timeout);
+  });
+}
+
+/**
+ * Create a tooltip to inform users about keyboard controls
+ * @param {string} websiteTheme - 'dark' or 'light'
+ */
+function createKeyboardHintTooltip(websiteTheme) {
+  // Check if tooltip already exists
+  if (document.getElementById('neuro-keyboard-hint')) {
+    return;
+  }
+  
+  // Colors based on theme
+  const colors = websiteTheme === 'dark'
+    ? {
+        bg: 'rgba(40, 40, 50, 0.9)',
+        border: 'rgba(120, 130, 240, 0.5)',
+        text: '#E0E0E6'
+      }
+    : {
+        bg: 'rgba(255, 255, 255, 0.9)',
+        border: 'rgba(99, 102, 241, 0.5)',
+        text: '#333333'
+      };
+  
+  // Create tooltip
+  const tooltip = document.createElement('div');
+  tooltip.id = 'neuro-keyboard-hint';
+  tooltip.setAttribute('data-neuro-customizer', 'focus');
+  tooltip.setAttribute('aria-hidden', 'true');
+  
+  tooltip.style.cssText = 
+    'position: fixed; ' +
+    'bottom: 20px; ' +
+    'left: 20px; ' +
+    'padding: 10px 15px; ' +
+    'background-color: ' + colors.bg + '; ' +
+    'border: 1px solid ' + colors.border + '; ' +
+    'color: ' + colors.text + '; ' +
+    'border-radius: 4px; ' +
+    'font-size: 14px; ' +
+    'z-index: 99999; ' +
+    'box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); ' +
+    'opacity: 0; ' +
+    'transition: opacity 0.3s ease;';
+  
+  tooltip.innerHTML = '<strong>Focus Mode Controls:</strong><br>↑/↓ arrow keys to move reading ruler<br>ESC to hide ruler';
+  
+  document.body.appendChild(tooltip);
+  
+  // Track for cleanup
+  if (!window.neuroCustomizerElements) {
+    window.neuroCustomizerElements = [];
+  }
+  window.neuroCustomizerElements.push(tooltip);
+  
+  // Show the tooltip briefly, then hide it
+  setTimeout(() => {
+    tooltip.style.opacity = '1';
+    
+    setTimeout(() => {
+      tooltip.style.opacity = '0';
+    }, 5000);
+  }, 1000);
+  
+  // Show tooltip when user presses any arrow key
+  document.addEventListener('keydown', (e) => {
+    if (!document.body.classList.contains('neuro-focus-mode')) return;
+    
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      tooltip.style.opacity = '1';
+      
+      clearTimeout(window.tooltipTimeout);
+      window.tooltipTimeout = setTimeout(() => {
+        tooltip.style.opacity = '0';
+      }, 2000);
+    }
+  });
+}
+
+/**
+ * Apply focus mode styling to dynamically added elements
+ * @param {string} websiteTheme - 'dark' or 'light'
+ */
+function applyFocusToNewElements(websiteTheme) {
+  // Colors based on theme
+  const colors = websiteTheme === 'dark'
+    ? {
+        highlight: 'rgba(120, 130, 240, 0.1)',
+        border: 'rgba(120, 130, 240, 0.5)'
+      }
+    : {
+        highlight: 'rgba(99, 102, 241, 0.05)',
+        border: 'rgba(99, 102, 241, 0.5)'
+      };
+  
+  let css = '';
+  
+  // Style for dynamically added elements
+  css += 'body.neuro-focus-mode p:not([data-neuro-focus-processed]),\n';
+  css += 'body.neuro-focus-mode li:not([data-neuro-focus-processed]) {\n';
+  css += '  border-left: 3px solid ' + colors.border + ' !important;\n';
+  css += '  padding-left: 0.75em !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-focus-mode p:not([data-neuro-focus-processed]):hover,\n';
+  css += 'body.neuro-focus-mode li:not([data-neuro-focus-processed]):hover {\n';
+  css += '  background-color: ' + colors.highlight + ' !important;\n';
+  css += '}\n';
+  
+  createStyleElement('neuro-focus-dynamic', css, 'focus');
+  
+  // Mark elements as processed
+  document.querySelectorAll('p, li').forEach(el => {
+    el.setAttribute('data-neuro-focus-processed', 'true');
+  });
+}
+
+/**
+ * Apply YouTube-specific fixes for focus mode
+ * @param {string} websiteTheme - 'dark' or 'light'
+ */
+function applyYouTubeSpecificFixes(websiteTheme) {
+  const colors = websiteTheme === 'dark'
+    ? {
+        highlight: 'rgba(120, 130, 240, 0.1)',
+        border: 'rgba(120, 130, 240, 0.5)',
+        sidebarBg: '#0F0F0F',
+        mainBg: '#0F0F0F'
+      }
+    : {
+        highlight: 'rgba(99, 102, 241, 0.05)',
+        border: 'rgba(99, 102, 241, 0.5)',
+        sidebarBg: '#FFFFFF',
+        mainBg: '#FFFFFF'
+      };
+  
+  let css = '';
+  
+  // Fix YouTube sidebar
+  css += '/* Fix YouTube sidebar */\n';
+  css += 'body.neuro-focus-mode ytd-guide-renderer,\n';
+  css += 'body.neuro-focus-mode tp-yt-app-drawer {\n';
+  css += '  display: block !important;\n';
+  css += '  visibility: visible !important;\n';
+  css += '  opacity: 0.9 !important;\n';
+  css += '  background-color: ' + colors.sidebarBg + ' !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-focus-mode ytd-guide-renderer:hover,\n';
+  css += 'body.neuro-focus-mode tp-yt-app-drawer:hover {\n';
+  css += '  opacity: 1 !important;\n';
+  css += '}\n\n';
+  
+  // Fix YouTube video title readability
+  css += '/* Fix YouTube video title readability */\n';
+  css += 'body.neuro-focus-mode ytd-watch-metadata,\n';
+  css += 'body.neuro-focus-mode ytd-video-primary-info-renderer,\n';
+  css += 'body.neuro-focus-mode ytd-expander {\n';
+  css += '  border-left: 3px solid ' + colors.border + ' !important;\n';
+  css += '  padding-left: 1em !important;\n';
+  css += '  max-width: 100% !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-focus-mode #video-title {\n';
+  css += '  font-size: 18px !important;\n';
+  css += '  line-height: 1.5 !important;\n';
+  css += '  margin-bottom: 0.5em !important;\n';
+  css += '}\n\n';
+  
+  // Fix YouTube comments
+  css += '/* Fix YouTube comments */\n';
+  css += 'body.neuro-focus-mode ytd-comment-renderer {\n';
+  css += '  border-left: 3px solid ' + colors.border + ' !important;\n';
+  css += '  padding-left: 1em !important;\n';
+  css += '  margin-bottom: 1em !important;\n';
+  css += '  transition: background-color 0.2s ease !important;\n';
+  css += '}\n\n';
+  
+  css += 'body.neuro-focus-mode ytd-comment-renderer:hover {\n';
+  css += '  background-color: ' + colors.highlight + ' !important;\n';
+  css += '}\n\n';
+  
+  // Fix YouTube video description
+  css += '/* Fix YouTube video description */\n';
+  css += 'body.neuro-focus-mode #description {\n';
+  css += '  border-left: 3px solid ' + colors.border + ' !important;\n';
+  css += '  padding-left: 1em !important;\n';
+  css += '  background-color: ' + colors.highlight + ' !important;\n';
+  css += '}\n\n';
+  
+  // Don't add borders to video player
+  css += '/* Don\'t add borders to video player */\n';
+  css += 'body.neuro-focus-mode video,\n';
+  css += 'body.neuro-focus-mode .html5-video-container,\n';
+  css += 'body.neuro-focus-mode .ytp-chrome-bottom {\n';
+  css += '  border-left: none !important;\n';
+  css += '  padding-left: 0 !important;\n';
+  css += '  margin-left: 0 !important;\n';
+  css += '}\n';
+  
+  createStyleElement('neuro-focus-youtube', css, 'focus');
+}
